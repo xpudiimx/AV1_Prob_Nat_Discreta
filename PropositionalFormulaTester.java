@@ -10,71 +10,72 @@ public class PropositionalFormulaTester {
     private static Scanner entrada = new Scanner(System.in);
 
     public static String recebeFormula(){
-        System.out.println("Informe a formula para ser analisada");
+        System.out.println("Informe a fórmula para ser analisada");
         String formula = entrada.nextLine();
         return formula;
     }
 
     String formula = recebeFormula();
 
-    public void validaFormula() {
+    public void validaConectivos() {
         for (char c : formula.toCharArray()) {
             if (!Character.isLetter(c) && !VALID_Connectives.contains(c) && c != '(' && c != ')') {
-                System.err.println("A formula não é válida.");
+                System.err.println("Conectivos não válidos.");
                 return;
             }
 
         }
-        System.out.println("Formula valida.");
+        System.out.println("Conectivos validos.");
     }
 
-    public String analisaFormato() {
-        if (isFBF(formula)) {
-            return "A fórmula é bem formulada (FBF).";
-        } else {
-            return "A fórmula não é bem formulada.";
-        }
-    }
-
-    public static boolean isFBF(String formula) {
+    public boolean validaFormato() {
         Stack<Character> stack = new Stack<>();
-        boolean lastWasOperator = true;
-        boolean expectingOperand = true;
+        boolean lastWasOperand = false;
+        boolean lastWasConnective = false;
 
-        for (int i = 0; i < formula.length(); i++) {
-            char c = formula.charAt(i);
-
-            if (Character.isLetter(c)) {
-                if (expectingOperand) {
-                    expectingOperand = false;
-                    lastWasOperator = false;
-                } else {
-                    return false;
-                }
-            } else if (VALID_Connectives.contains(c)) {
-                if (c == '~') {
-                    lastWasOperator = true;
-                } else if (!lastWasOperator) {
-                    lastWasOperator = true;
-                    expectingOperand = true;
-                } else {
-                    return false;
-                }
-            } else if (c == '(') {
+        for (char c : formula.toCharArray()) {
+            if (c == '(') {
                 stack.push(c);
-                expectingOperand = true;
+                lastWasOperand = false;
+                lastWasConnective = false;
             } else if (c == ')') {
-                if (stack.isEmpty() || lastWasOperator) {
+                if (stack.isEmpty() || stack.pop() != '(') {
+                    System.err.println("Fórmula mal formulada: Parênteses desequilibrados.");
                     return false;
                 }
-                stack.pop();
-                lastWasOperator = false;
+                lastWasOperand = true;
+            } else if (Character.isLetter(c)) {
+                if (lastWasOperand) {
+                    System.err.println("Fórmula mal formulada: Dois operandos seguidos.");
+                    return false;
+                }
+                lastWasOperand = true;
+                lastWasConnective = false;
+            } else if (VALID_Connectives.contains(c)) {
+                if (lastWasConnective && c != '~') {
+                    System.err.println("Fórmula mal formulada: Dois conectivos seguidos.");
+                    return false;
+                }
+                lastWasOperand = false;
+                lastWasConnective = true;
             } else {
+                System.err.println("Fórmula mal formulada: Caractere inválido.");
                 return false;
             }
         }
 
-        return stack.isEmpty() && !lastWasOperator;
+        if (!stack.isEmpty()) {
+            System.err.println("Fórmula mal formulada: Parênteses desequilibrados.");
+            return false;
+        }
+
+        if (lastWasConnective) {
+            System.err.println("Fórmula mal formulada: Fórmula termina com um conectivo.");
+            return false;
+        }
+
+        System.out.println("Fórmula bem formulada.");
+        return true;
     }
 }
 
